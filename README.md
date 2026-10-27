@@ -22,7 +22,7 @@
   <a href="CHANGELOG.md">Changelog</a>
 </p>
 
-![Screenshot](https://i.loli.net/2018/05/26/5b0912ce2e250.png)
+![Screenshot](docs/screenshot.png)
 
 ## Features
 
