@@ -1,41 +1,59 @@
 <p align="center">
-<img src="https://raw.githubusercontent.com/fdddf/vue3-aplayer/main/src/assets/vue-aplayer-round.png" alt="Vue-APlayer" width="100">
+  <img src="https://raw.githubusercontent.com/fdddf/vue3-aplayer/main/src/assets/vue-aplayer-round.png" alt="vue3-aplayer" width="100">
 </p>
+
 <h1 align="center">vue3-aplayer</h1>
 
-> Vue 3 port of [Vue-APlayer](https://github.com/SevenOutman/vue-aplayer), the Vue implementation of [APlayer](https://github.com/MoePlayer/APlayer).
+<p align="center">
+  A clean, lightweight music player component for Vue 3.
+</p>
 
-[![CI](https://github.com/fdddf/vue3-aplayer/actions/workflows/ci.yml/badge.svg)](https://github.com/fdddf/vue3-aplayer/actions/workflows/ci.yml)
-[![npm](https://img.shields.io/npm/v/vue3-aplayer.svg?style=flat-square)](https://www.npmjs.com/package/vue3-aplayer)
-[![npm](https://img.shields.io/npm/dt/vue3-aplayer.svg?style=flat-square)](https://www.npmjs.com/package/vue3-aplayer)
-[![license](https://img.shields.io/npm/l/vue3-aplayer.svg?style=flat-square)](LICENSE)
+<p align="center">
+  <a href="https://github.com/fdddf/vue3-aplayer/actions/workflows/ci.yml"><img src="https://github.com/fdddf/vue3-aplayer/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://www.npmjs.com/package/vue3-aplayer"><img src="https://img.shields.io/npm/v/vue3-aplayer.svg?style=flat-square" alt="npm version"></a>
+  <a href="https://www.npmjs.com/package/vue3-aplayer"><img src="https://img.shields.io/npm/dm/vue3-aplayer.svg?style=flat-square" alt="npm downloads"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/npm/l/vue3-aplayer.svg?style=flat-square" alt="license"></a>
+</p>
 
-[**Demo**](https://fdddf.github.io/vue3-aplayer/) · [**Documentation**](docs/README.md) · [**中文文档**](docs/README.zh-CN.md) · [**Changelog**](CHANGELOG.md)
+<p align="center">
+  <a href="https://vue3-aplayer.zixi.org/"><strong>Live demo</strong></a> ·
+  <a href="docs/README.md">Documentation</a> ·
+  <a href="docs/README.zh-CN.md">中文文档</a> ·
+  <a href="CHANGELOG.md">Changelog</a>
+</p>
 
 ![Screenshot](https://i.loli.net/2018/05/26/5b0912ce2e250.png)
 
-
 ## Features
 
-- Beautiful clean UI
-- Lyrics scroll
-- Playlist with repeat & shuffle controls
-- Custom theme color / Self-adapting theme color
-- Drag and place anywhere
-- Mutex play
-- HLS support
-- **Easy props and API**
-- **Dependency free** and light-weight (~10KB gzipped JS + 5KB CSS)
+- Clean UI in the style of [APlayer](https://github.com/MoePlayer/APlayer)
+- Playlist with shuffle and repeat modes
+- Scrolling lyrics from an LRC string or a `.lrc` URL
+- Custom theme color, per song or picked from the cover image
+- Mini mode, and float mode where the player can be dragged anywhere on the page
+- Mutex playback: starting one player pauses the others
+- HLS (`.m3u8`) streams via hls.js
+- `v-model` for the current song, volume, mute, shuffle and repeat
+- Emits every native `<audio>` media event
+- No runtime dependencies, about 10 KB of JS and 5 KB of CSS gzipped
 
+## Installation
 
-## Install
-
-```
+```sh
 npm i vue3-aplayer
 ```
 
+Or use it from a CDN, which exposes the `VueAPlayer` global:
 
-## Usage
+```html
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vue3-aplayer/dist/vue3-aplayer.css">
+<script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/vue3-aplayer"></script>
+```
+
+## Quick start
+
+Register the component globally:
 
 ```js
 import { createApp } from 'vue'
@@ -43,72 +61,126 @@ import VueAPlayer from 'vue3-aplayer'
 import 'vue3-aplayer/style.css'
 import App from './App.vue'
 
-createApp(App)
-  .use(VueAPlayer) // registers <aplayer> globally
-  .mount('#app')
+createApp(App).use(VueAPlayer).mount('#app')
 ```
 
-```html
-<aplayer
-  :music="{
+Then use `<aplayer>` in any template:
+
+```vue
+<template>
+  <aplayer :music="song" :list="playlist" show-lrc />
+</template>
+
+<script setup>
+const playlist = [
+  {
     title: 'SoundHelix Song 1',
     artist: 'T. Schürger',
     src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
-    pic: 'https://picsum.photos/id/1025/300/300'
-  }"
-/>
+    pic: 'https://picsum.photos/id/1025/300/300',
+    lrc: '[00:00.00]First line\n[00:05.00]Second line',
+  },
+  {
+    title: 'SoundHelix Song 2',
+    artist: 'T. Schürger',
+    src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3',
+    pic: 'https://picsum.photos/id/1043/300/300',
+  },
+]
+const song = playlist[0]
+</script>
 ```
 
-Or register it locally:
+You can also register it locally in a single component:
 
 ```vue
 <script setup>
 import Aplayer from 'vue3-aplayer'
 import 'vue3-aplayer/style.css'
 </script>
+
+<template>
+  <Aplayer :music="{ title: 'Song', artist: 'Artist', src: '/song.mp3' }" />
+</template>
 ```
 
-See the [full documentation](docs/README.md) for props, events, HLS and self-adapting theme setup.
+## Props
 
+| Prop | Type | Default | Description |
+| ---- | ---- | ------- | ----------- |
+| `music` | Object | *required* | The current song: `{ src, title, artist, pic, lrc, theme }`. Supports `v-model:music`. |
+| `list` | Array | `[]` | Playlist. The list panel is shown when it is not empty. |
+| `mini` | Boolean | `false` | Mini mode: only the cover and play button. |
+| `float` | Boolean | `false` | Float mode: drag the player by its cover. Disabled on mobile. |
+| `showLrc` | Boolean | `false` | Show scrolling lyrics. |
+| `theme` | String | `'#41b883'` | Theme color, or `'pic'` to pick it from the cover image. |
+| `shuffle` | Boolean | `false` | Shuffle the playlist. Supports `v-model:shuffle`. |
+| `repeat` | String | `'no-repeat'` | `'repeat-one'`, `'repeat-all'` or `'no-repeat'`. Supports `v-model:repeat`. |
+| `mutex` | Boolean | `true` | Pause other players when this one starts playing. |
+| `listFolded` | Boolean | `false` | Start with the playlist folded. |
+| `listMaxHeight` | String | — | Max height of the playlist, e.g. `'200px'`. |
+| `autoplay` | Boolean | `false` | Start playing when mounted. Ignored on mobile, and subject to the browser's autoplay policy. |
+| `controls` | Boolean | `false` | Show the native audio controls. |
+| `volume` | Number | `0.8` | Volume from 0 to 1. Supports `v-model:volume`. |
+| `muted` | Boolean | `false` | Mute the player. Supports `v-model:muted`. |
+| `preload` | String | — | `'none'`, `'metadata'` or `'auto'`. |
+
+Events, slots and every song field are covered in the [full documentation](docs/README.md).
+
+## Optional features
+
+### HLS streams
+
+Safari plays `.m3u8` natively. Other browsers need [hls.js](https://github.com/video-dev/hls.js):
+
+```js
+import Hls from 'hls.js'
+
+app.use(VueAPlayer, { hls: Hls })
+```
+
+### Theme color from the cover image
+
+Set `theme="pic"` on the player, or `theme: 'pic'` on a song, and provide [color-thief](https://github.com/lokesh/color-thief). Version 2.x and 3.x both work. The cover must be served with CORS headers.
+
+```js
+import * as ColorThief from 'colorthief'
+
+app.use(VueAPlayer, { colorThief: ColorThief })
+```
+
+With CDN builds, loading either library as a `<script>` (`window.Hls`, `window.ColorThief`) is enough.
 
 ## Upgrading from 1.x
 
-- Import the stylesheet: `import 'vue3-aplayer/style.css'`, since CSS is no longer injected by JavaScript.
-- HLS: pass hls.js explicitly with `app.use(VueAPlayer, { hls: Hls })`, or load it as the `window.Hls` global.
-- Self-adapting theme: pass color-thief with `app.use(VueAPlayer, { colorThief })`, or load it as the `window.ColorThief` global. Both colorthief 2.x and 3.x work.
-- `.sync` is now `v-model:music`, `v-model:volume`, `v-model:muted`, `v-model:shuffle` and `v-model:repeat`.
-- The `controls` prop now works in production builds too.
-- The package only ships `dist/`, so `vue3-aplayer/src/...` imports no longer work.
+Version 2.0 rebuilt the package with Vite. The main changes are:
 
-Full details are in the [changelog](CHANGELOG.md).
+- Import the stylesheet yourself with `import 'vue3-aplayer/style.css'`.
+- Pass hls.js and color-thief through `app.use(VueAPlayer, { hls, colorThief })`, or load them as globals.
+- Replace `.sync` with `v-model:<prop>`.
+- Only `dist/` is published, so imports from `vue3-aplayer/src/...` no longer work.
 
+See the [changelog](CHANGELOG.md) for the full list, including the bug fixes.
 
 ## Development
 
-```
+```sh
 npm install
-npm run dev        # demo page with hot reload at http://localhost:3000
-npm test           # unit tests (Vitest)
-npm run lint
-npm run build      # library -> dist/
-npm run build:demo # demo page -> demo/
+npm run dev         # demo page with hot reload at http://localhost:3000
+npm test            # unit tests (Vitest)
+npm run lint        # ESLint
+npm run build       # library → dist/
+npm run build:demo  # demo page → demo/
 ```
 
-Work happens on the `main` branch. Releases are published to npm when a GitHub release is created.
+- Development happens on `main`. Pull requests are welcome, so please run `npm run lint && npm test` first.
+- Every push to `main` deploys the [demo](https://vue3-aplayer.zixi.org/).
+- Publishing a GitHub release publishes the package to npm.
 
+## Credits
 
-## Related projects
-
-- [Vue-APlayer](https://github.com/SevenOutman/vue-aplayer): the Vue 2 original this project is forked from
-- [APlayer](https://github.com/MoePlayer/APlayer): prior art
-- [@moefe/vue-aplayer](https://github.com/MoePlayer/vue-aplayer): another Vue implementation of APlayer
-
-
-## Thanks
-
-[@SevenOutman](https://github.com/SevenOutman) for creating Vue-APlayer, and [@DIYgod](https://github.com/DIYgod) for creating APlayer.
-
+vue3-aplayer is a Vue 3 fork of [Vue-APlayer](https://github.com/SevenOutman/vue-aplayer) by [@SevenOutman](https://github.com/SevenOutman), which is in turn based on [APlayer](https://github.com/MoePlayer/APlayer) by [@DIYgod](https://github.com/DIYgod). The demo uses music from [SoundHelix](https://www.soundhelix.com), covers from [Lorem Picsum](https://picsum.photos) and an HLS test stream from [Mux](https://test-streams.mux.dev).
 
 ## License
 
-[MIT](LICENSE). Copyright (c) 2016-present Shenghao "Doma" Lei
+[MIT](LICENSE). Copyright © 2016-present Shenghao "Doma" Lei.
