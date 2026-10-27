@@ -881,6 +881,7 @@
           }
 
           .aplayer-author {
+            margin-left: 4px;
             font-size: 12px;
             color: #666;
           }
