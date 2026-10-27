@@ -1,33 +1,22 @@
 <p align="center">
-<img src="https://github.com/SevenOutman/vue-aplayer/blob/develop/src/assets/vue-aplayer-round.png" alt="Vue-APlayer" width="100">
+<img src="https://raw.githubusercontent.com/fdddf/vue3-aplayer/main/src/assets/vue-aplayer-round.png" alt="Vue-APlayer" width="100">
 </p>
-<h1 align="center">Vue-APlayer (Vue 3.0 compatible) </h1>
+<h1 align="center">vue3-aplayer</h1>
 
-> Vue implementation of [APlayer](https://github.com/MoePlayer/APlayer) prototype.
-[**Demo**](https://sevenoutman.github.io/vue-aplayer)
+> Vue 3 port of [Vue-APlayer](https://github.com/SevenOutman/vue-aplayer), the Vue implementation of [APlayer](https://github.com/MoePlayer/APlayer).
 
+[![CI](https://github.com/fdddf/vue3-aplayer/actions/workflows/ci.yml/badge.svg)](https://github.com/fdddf/vue3-aplayer/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/vue3-aplayer.svg?style=flat-square)](https://www.npmjs.com/package/vue3-aplayer)
+[![npm](https://img.shields.io/npm/dt/vue3-aplayer.svg?style=flat-square)](https://www.npmjs.com/package/vue3-aplayer)
+[![license](https://img.shields.io/npm/l/vue3-aplayer.svg?style=flat-square)](LICENSE)
 
-## Install
-```
-npm i vue3-aplayer
-```
-
-
-[![Travis](https://img.shields.io/travis/SevenOutman/vue-aplayer.svg?style=flat-square)](https://travis-ci.org/SevenOutman/vue-aplayer)
-[![npm](https://img.shields.io/npm/v/vue-aplayer.svg?style=flat-square)](https://www.npmjs.com/package/vue-aplayer)
-[![npm](https://img.shields.io/npm/dt/vue-aplayer.svg?style=flat-square)](https://www.npmjs.com/package/vue-aplayer)
-[![devDependency Status](https://img.shields.io/david/dev/SevenOutman/vue-aplayer.svg?style=flat-square)](https://david-dm.org/SevenOutman/vue-aplayer#info=devDependencies)
-
-[![Hubble](https://img.shields.io/badge/since-2016-409eff.svg?style=flat-square)](https://hubble.js.org/#/?owner=SevenOutman&repo=vue-aplayer&start)
-[![GitHub commit activity the past year](https://img.shields.io/github/commit-activity/y/SevenOutman/vue-aplayer.svg?style=flat-square)](https://github.com/SevenOutman/vue-aplayer/commits/develop)
-[![GitHub last commit](https://img.shields.io/github/last-commit/SevenOutman/vue-aplayer/develop.svg?style=flat-square)](https://github.com/SevenOutman/vue-aplayer/commits/develop)
-[![Dependents on GitHub](https://img.shields.io/badge/Dependents-200+-FF53A1.svg?style=flat-square)](https://github.com/SevenOutman/vue-aplayer/network/dependents?dependent_type=REPOSITORY)
-[![Discord](https://img.shields.io/badge/Discord-Join%20chat%20%E2%86%92-738bd7.svg?style=flat-square)](https://discord.gg/e3SeMJE)
+[**Demo**](https://fdddf.github.io/vue3-aplayer/) · [**Documentation**](docs/README.md) · [**中文文档**](docs/README.zh-CN.md) · [**Changelog**](CHANGELOG.md)
 
 ![Screenshot](https://i.loli.net/2018/05/26/5b0912ce2e250.png)
 
 
-### Features
+## Features
+
 - Beautiful clean UI
 - Lyrics scroll
 - Playlist with repeat & shuffle controls
@@ -36,60 +25,90 @@ npm i vue3-aplayer
 - Mutex play
 - HLS support
 - **Easy props and API**
-- **Dependency free** and light-weight (gzipped 16KB)
+- **Dependency free** and light-weight (~10KB gzipped JS + 5KB CSS)
 
-Using Vue-APlayer in your project? [Let me know!](https://github.com/SevenOutman/vue-aplayer/issues/26)
+
+## Install
+
+```
+npm i vue3-aplayer
+```
 
 
 ## Usage
 
-```HTML
-<aplayer autoplay
+```js
+import { createApp } from 'vue'
+import VueAPlayer from 'vue3-aplayer'
+import 'vue3-aplayer/style.css'
+import App from './App.vue'
+
+createApp(App)
+  .use(VueAPlayer) // registers <aplayer> globally
+  .mount('#app')
+```
+
+```html
+<aplayer
   :music="{
-    title: 'secret base~君がくれたもの~',
-    artist: 'Silent Siren',
-    src: 'https://moeplayer.b0.upaiyun.com/aplayer/secretbase.mp3',
-    pic: 'https://moeplayer.b0.upaiyun.com/aplayer/secretbase.jpg'
+    title: 'SoundHelix Song 1',
+    artist: 'T. Schürger',
+    src: 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+    pic: 'https://picsum.photos/id/1025/300/300'
   }"
 />
 ```
- [**Full documentation**](https://github.com/SevenOutman/vue-aplayer/blob/develop/docs/README.md)
 
- [**中文文档**](https://github.com/SevenOutman/vue-aplayer/blob/develop/docs/README.zh-CN.md)
+Or register it locally:
 
+```vue
+<script setup>
+import Aplayer from 'vue3-aplayer'
+import 'vue3-aplayer/style.css'
+</script>
+```
 
-## Changelog
-
-Detailed changes fro each release are documented in the [release notes](https://github.com/SevenOutman/vue-aplayer/releases).
-
-
-## Contribution
-
-Feel free to [open an issue](https://github.com/SevenOutman/vue-aplayer/issues) if you find a bug or have a nice idea.
-
-[PRs are welcome](https://github.com/SevenOutman/vue-aplayer/blob/master/docs/README.md#contribute).
+See the [full documentation](docs/README.md) for props, events, HLS and self-adapting theme setup.
 
 
-## The name
+## Upgrading from 1.x
 
-- When referring to `Vue-APlayer`, the name should be written in exactly the same case.
-- When referring to its versions, either `Vue-APlayer@1.x` (GitHub) or `vue-aplayer@1.x` (npm) is fine.
+- Import the stylesheet: `import 'vue3-aplayer/style.css'`, since CSS is no longer injected by JavaScript.
+- HLS: pass hls.js explicitly with `app.use(VueAPlayer, { hls: Hls })`, or load it as the `window.Hls` global.
+- Self-adapting theme: pass color-thief with `app.use(VueAPlayer, { colorThief })`, or load it as the `window.ColorThief` global. Both colorthief 2.x and 3.x work.
+- `.sync` is now `v-model:music`, `v-model:volume`, `v-model:muted`, `v-model:shuffle` and `v-model:repeat`.
+- The `controls` prop now works in production builds too.
+- The package only ships `dist/`, so `vue3-aplayer/src/...` imports no longer work.
+
+Full details are in the [changelog](CHANGELOG.md).
+
+
+## Development
+
+```
+npm install
+npm run dev        # demo page with hot reload at http://localhost:3000
+npm test           # unit tests (Vitest)
+npm run lint
+npm run build      # library -> dist/
+npm run build:demo # demo page -> demo/
+```
+
+Work happens on the `main` branch. Releases are published to npm when a GitHub release is created.
 
 
 ## Related projects
 
-- [APlayer](https://github.com/MoePlayer/APlayer): Prior art
-- [@moefe/vue-aplayer](https://github.com/MoePlayer/vue-aplayer): Another Vue implementation of APlayer by [@u3u](https://github.com/u3u)
+- [Vue-APlayer](https://github.com/SevenOutman/vue-aplayer): the Vue 2 original this project is forked from
+- [APlayer](https://github.com/MoePlayer/APlayer): prior art
+- [@moefe/vue-aplayer](https://github.com/MoePlayer/vue-aplayer): another Vue implementation of APlayer
 
 
 ## Thanks
 
-[@DIYgod](https://github.com/DIYgod), for creating APlayer and sharing cloud storage for hosting Vue-APlayer's demo page media resources.
+[@SevenOutman](https://github.com/SevenOutman) for creating Vue-APlayer, and [@DIYgod](https://github.com/DIYgod) for creating APlayer.
 
 
 ## License
 
-Vue-APlayer is [MIT Licensed](https://github.com/SevenOutman/vue-aplayer/blob/master/LICENSE). 
-
-Copyright (c) 2016-present Shenghao "Doma" Lei
-
+[MIT](LICENSE). Copyright (c) 2016-present Shenghao "Doma" Lei

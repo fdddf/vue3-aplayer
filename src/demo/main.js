@@ -1,16 +1,9 @@
-/**
- * Created by Doma on 2016/11/22.
- */
-
 import { createApp } from 'vue'
-
-
-import VueAPlayer from '../vue-aplayer.vue'
-
+import Hls from 'hls.js'
+import * as ColorThief from 'colorthief'
+import VueAPlayer from '../index.js'
 import App from './App.vue'
 
-
-const app = createApp(App)
-app.config.devtools = true
-app.use(VueAPlayer)
-app.mount('#app')
+createApp(App)
+  .use(VueAPlayer, { hls: Hls, colorThief: ColorThief })
+  .mount('#app')

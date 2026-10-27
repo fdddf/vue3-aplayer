@@ -2,7 +2,7 @@
   <div
     class="aplayer-bar-wrap"
     @mousedown="onThumbMouseDown"
-    @touchstart="onThumbTouchStart"
+    @touchstart.passive="onThumbTouchStart"
     ref="barWrap"
   >
     <div class="aplayer-bar">
@@ -19,7 +19,7 @@
           @mouseover="thumbHovered = true"
           @mouseout="thumbHovered = false"
           class="aplayer-thumb"
-          :style="{borderColor:　theme, backgroundColor: thumbHovered ? theme : '#fff'}"
+          :style="{borderColor: theme, backgroundColor: thumbHovered ? theme : '#fff'}"
         >
           <span class="aplayer-loading-icon"
                 :style="{backgroundColor: theme }"
@@ -33,7 +33,7 @@
 </template>
 
 <script>
-  import {getElementViewLeft} from '../utils'
+  import { clamp, getPointer } from '../utils'
   import Icon from './aplayer-icon.vue'
 
   export default {
@@ -41,69 +41,44 @@
       Icon
     },
     props: ['loadProgress', 'playProgress', 'theme'],
+    emits: ['dragbegin', 'dragging', 'dragend'],
     data () {
       return {
         thumbHovered: false,
       }
     },
+    beforeUnmount () {
+      this.removeDocumentListeners()
+    },
     methods: {
+      // getBoundingClientRect respects CSS transforms (float mode) and scrolled containers
+      getPercentage (e) {
+        const rect = this.$refs.barWrap.getBoundingClientRect()
+        if (!rect.width) return 0
+        return clamp((getPointer(e).clientX - rect.left) / rect.width)
+      },
       onThumbMouseDown (e) {
-        const barWidth = this.$refs.barWrap.clientWidth
-        let percentage = (e.clientX - getElementViewLeft(this.$refs.barWrap)) / barWidth
-        percentage = percentage > 0 ? percentage : 0
-        percentage = percentage < 1 ? percentage : 1
-
-        this.$emit('dragbegin', percentage)
-        document.addEventListener('mousemove', this.onDocumentMouseMove)
-        document.addEventListener('mouseup', this.onDocumentMouseUp)
-      },
-      onDocumentMouseMove (e) {
-        const barWidth = this.$refs.barWrap.clientWidth
-        let percentage = (e.clientX - getElementViewLeft(this.$refs.barWrap)) / barWidth
-        percentage = percentage > 0 ? percentage : 0
-        percentage = percentage < 1 ? percentage : 1
-
-        this.$emit('dragging', percentage)
-      },
-      onDocumentMouseUp (e) {
-        document.removeEventListener('mouseup', this.onDocumentMouseUp)
-        document.removeEventListener('mousemove', this.onDocumentMouseMove)
-
-        const barWidth = this.$refs.barWrap.clientWidth
-        let percentage = (e.clientX - getElementViewLeft(this.$refs.barWrap)) / barWidth
-        percentage = percentage > 0 ? percentage : 0
-        percentage = percentage < 1 ? percentage : 1
-        this.$emit('dragend', percentage)
+        this.$emit('dragbegin', this.getPercentage(e))
+        document.addEventListener('mousemove', this.onDocumentMove)
+        document.addEventListener('mouseup', this.onDocumentUp)
       },
       onThumbTouchStart (e) {
-        const barWidth = this.$refs.barWrap.clientWidth
-        let percentage = (e.clientX - getElementViewLeft(this.$refs.barWrap)) / barWidth
-        percentage = percentage > 0 ? percentage : 0
-        percentage = percentage < 1 ? percentage : 1
-
-        this.$emit('dragbegin', percentage)
-        document.addEventListener('touchmove', this.onDocumentTouchMove)
-        document.addEventListener('touchend', this.onDocumentTouchEnd)
+        this.$emit('dragbegin', this.getPercentage(e))
+        document.addEventListener('touchmove', this.onDocumentMove)
+        document.addEventListener('touchend', this.onDocumentUp)
       },
-      onDocumentTouchMove (e) {
-        const touch = e.changedTouches[0]
-        const barWidth = this.$refs.barWrap.clientWidth
-        let percentage = (touch.clientX - getElementViewLeft(this.$refs.barWrap)) / barWidth
-        percentage = percentage > 0 ? percentage : 0
-        percentage = percentage < 1 ? percentage : 1
-
-        this.$emit('dragging', percentage)
+      onDocumentMove (e) {
+        this.$emit('dragging', this.getPercentage(e))
       },
-      onDocumentTouchEnd (e) {
-        document.removeEventListener('touchend', this.onDocumentTouchEnd)
-        document.removeEventListener('touchmove', this.onDocumentTouchMove)
-
-        const touch = e.changedTouches[0]
-        const barWidth = this.$refs.barWrap.clientWidth
-        let percentage = (touch.clientX - getElementViewLeft(this.$refs.barWrap)) / barWidth
-        percentage = percentage > 0 ? percentage : 0
-        percentage = percentage < 1 ? percentage : 1
-        this.$emit('dragend', percentage)
+      onDocumentUp (e) {
+        this.removeDocumentListeners()
+        this.$emit('dragend', this.getPercentage(e))
+      },
+      removeDocumentListeners () {
+        document.removeEventListener('mousemove', this.onDocumentMove)
+        document.removeEventListener('mouseup', this.onDocumentUp)
+        document.removeEventListener('touchmove', this.onDocumentMove)
+        document.removeEventListener('touchend', this.onDocumentUp)
       },
     },
   }

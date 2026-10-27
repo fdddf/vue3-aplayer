@@ -16,7 +16,7 @@
 </template>
 
 <script>
-  import {parseLrc} from '../utils'
+  import { parseLrc, warn } from '../utils'
 
   export default {
     props: {
@@ -39,12 +39,6 @@
       lrcLines () {
         return parseLrc(this.displayLrc)
       },
-      currentLine () {
-        if (this.currentLineIndex > this.lrcLines.length - 1) {
-          return null
-        }
-        return this.lrcLines[this.currentLineIndex]
-      },
       transformStyle () {
         // transform: translateY(0); -webkit-transform: translateY(0);
         return {
@@ -55,7 +49,8 @@
     },
     methods: {
       applyLrc (lrc) {
-        if (/^https?:\/\//.test(lrc)) {
+        if (/^(https?:)?\/\//.test(lrc)) {
+          this.displayLrc = ''
           this.fetchLrc(lrc)
         } else {
           this.displayLrc = lrc
@@ -63,10 +58,17 @@
       },
       fetchLrc (src) {
         fetch(src)
-          .then(response => response.text())
-          .then((lrc) => {
-            this.displayLrc = lrc
+          .then((response) => {
+            if (!response.ok) throw new Error(`HTTP ${response.status}`)
+            return response.text()
           })
+          .then((lrc) => {
+            // ignore responses for a song that is no longer current
+            if (this.currentMusic.lrc === src) {
+              this.displayLrc = lrc
+            }
+          })
+          .catch((e) => warn(`failed to load lrc ${src}: ${e.message}`))
       },
       hideLrc () {
         this.displayLrc = ''
@@ -90,6 +92,7 @@
           const nextLine = this.lrcLines[i + 1]
           if (playedTime >= line[0] && (!nextLine || playedTime < nextLine[0])) {
             this.currentLineIndex = i
+            break
           }
         }
       },
@@ -97,7 +100,7 @@
   }
 </script>
 <style lang="scss">
-  @import "../scss/variables";
+  @use "../scss/variables" as *;
 
   .aplayer-lrc {
     position: relative;
@@ -115,10 +118,7 @@
       width: 100%;
       height: 10%;
       content: ' ';
-      background: -moz-linear-gradient(top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
-      background: -webkit-linear-gradient(top, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
       background: linear-gradient(to bottom, rgba(255, 255, 255, 1) 0%, rgba(255, 255, 255, 0) 100%);
-      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#00ffffff', GradientType=0);
     }
 
     &:after {
@@ -130,10 +130,7 @@
       width: 100%;
       height: 33%;
       content: ' ';
-      background: -moz-linear-gradient(top, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.8) 100%);
-      background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.8) 100%);
       background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.8) 100%);
-      filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#00ffffff', endColorstr='#ccffffff', GradientType=0);
     }
 
     p {

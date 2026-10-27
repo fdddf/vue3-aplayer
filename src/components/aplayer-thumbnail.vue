@@ -32,6 +32,7 @@
         default: false
       }
     },
+    emits: ['toggleplay', 'dragbegin', 'dragging', 'dragend'],
     data () {
       return {
         hasMovedSinceMouseDown: false,
@@ -48,6 +49,9 @@
         }
       },
     },
+    beforeUnmount () {
+      this.removeDocumentListeners()
+    },
     methods: {
       onDragBegin (e) {
         if (this.enableDrag) {
@@ -63,11 +67,13 @@
         this.hasMovedSinceMouseDown = true
         this.$emit('dragging', {offsetLeft: e.clientX - this.dragStartX, offsetTop: e.clientY - this.dragStartY})
       },
-      onDocumentMouseUp (e) {
+      onDocumentMouseUp () {
+        this.removeDocumentListeners()
+        this.$emit('dragend')
+      },
+      removeDocumentListeners () {
         document.removeEventListener('mouseup', this.onDocumentMouseUp)
         document.removeEventListener('mousemove', this.onDocumentMouseMove)
-
-        this.$emit('dragend')
       },
       onClick () {
         if (!this.hasMovedSinceMouseDown) {
@@ -79,7 +85,7 @@
 </script>
 
 <style lang="scss">
-  @import "../scss/variables";
+  @use "../scss/variables" as *;
 
   .aplayer-float {
     .aplayer-pic:active {

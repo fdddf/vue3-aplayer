@@ -13,7 +13,7 @@
         <li
           v-for="(aMusic, index) of musicList"
           :key="index"
-          :class="{'aplayer-list-light': aMusic === currentMusic}"
+          :class="{'aplayer-list-light': isCurrent(aMusic)}"
           @click="$emit('selectsong', aMusic)"
         >
           <span class="aplayer-list-cur" :style="{background: theme}"></span>
@@ -27,7 +27,10 @@
 </template>
 
 <script>
+  import { toRaw } from 'vue'
+
   export default {
+    emits: ['selectsong'],
     props: {
       show: {
         type: Boolean,
@@ -46,6 +49,11 @@
       },
       theme: String,
       listmaxheight: String,
+    },
+    methods: {
+      isCurrent (music) {
+        return toRaw(music) === toRaw(this.currentMusic)
+      },
     },
     computed: {
       listHeightStyle () {
@@ -69,7 +77,7 @@
       will-change: height;
     }
 
-    &.slide-v-enter,
+    &.slide-v-enter-from,
     &.slide-v-leave-to {
       height: 0 !important;
     }

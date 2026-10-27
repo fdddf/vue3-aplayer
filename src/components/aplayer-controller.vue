@@ -14,7 +14,7 @@
         class="aplayer-dtime">{{secondToTime(stat.duration)}}</span>
       </div>
       <volume
-        v-if="!$parent.isMobile"
+        v-if="!isMobile"
         :volume="volume"
         :theme="theme"
         :muted="muted"
@@ -36,7 +36,7 @@
       <icon-button
         class="aplayer-icon-menu"
         icon="menu"
-        :class="{ 'inactive': !$parent.showList }"
+        :class="{ 'inactive': !listShown }"
         @click="$emit('togglelist')"
       />
     </div>
@@ -54,7 +54,8 @@
       VProgress,
       Volume,
     },
-    props: ['shuffle', 'repeat', 'stat', 'theme', 'volume', 'muted'],
+    props: ['shuffle', 'repeat', 'stat', 'theme', 'volume', 'muted', 'isMobile', 'listShown'],
+    emits: ['dragbegin', 'dragend', 'dragging', 'togglemute', 'setvolume', 'toggleshuffle', 'nextmode', 'togglelist'],
     computed: {
       loadProgress () {
         if (this.stat.duration === 0) return 0

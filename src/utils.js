@@ -10,12 +10,12 @@
  * [mm:ss.xx][mm:ss.xx][mm:ss.xx]lyric
  * [mm:ss.xx]<mm:ss.xx>lyric
  *
- * @return {String} [[time, text], [time, text], [time, text], ...]
+ * @return {Array} [[time, text], [time, text], [time, text], ...]
  */
 export function parseLrc (lrc_s) {
   if (lrc_s) {
     lrc_s = lrc_s.replace(/([^\]^\n])\[/g, (match, p1) => p1 + '\n[')
-    const lyric = lrc_s.split('\n')
+    const lyric = lrc_s.split(/\r?\n/)
     const lrc = []
     const lyricLen = lyric.length
     for (let i = 0; i < lyricLen; i++) {
@@ -46,58 +46,17 @@ export function parseLrc (lrc_s) {
   }
 }
 
-/**
- * Compare two semantic versions(major.minor.patch)
- */
-export function versionCompare (semantic1, semantic2) {
-  if (semantic1 === semantic2) {
-    return 0
-  }
-  const [major1, minor1, patch1] = semantic1.split('.').map(Number)
-  const [major2, minor2, patch2] = semantic2.split('.').map(Number)
-
-  if (major1 > major2) {
-    return 1
-  } else if (major1 === major2) {
-    if (minor1 > minor2) {
-      return 1
-    } else if (minor1 === minor2) {
-      if (patch1 > patch2) {
-        return 1
-      }
-    }
-  }
-  return -1
-}
-
 export function warn (message) {
   return console.warn(`[Vue-APlayer] ${message}`)
 }
 
-export function deprecatedProp (name, sinceVersion, alternative) {
-  return warn(`'${name}' is deprecated since v${sinceVersion}, and will be removed in future releases, use '${alternative}' instead`)
+export function clamp (value, min = 0, max = 1) {
+  return Math.min(Math.max(value, min), max)
 }
 
-export function getElementViewLeft (element) {
-  let actualLeft = element.offsetLeft
-  let current = element.offsetParent
-  let elementScrollLeft
-  while (current !== null) {
-    actualLeft += current.offsetLeft
-    current = current.offsetParent
-  }
-  elementScrollLeft = document.body.scrollLeft + document.documentElement.scrollLeft
-  return actualLeft - elementScrollLeft
-}
-
-export function getElementViewTop (element) {
-  let actualTop = element.offsetTop
-  let current = element.offsetParent
-  let elementScrollTop
-  while (current !== null) {
-    actualTop += current.offsetTop
-    current = current.offsetParent
-  }
-  elementScrollTop = document.body.scrollTop + document.documentElement.scrollTop
-  return actualTop - elementScrollTop
+/**
+ * Pointer position (mouse or touch) of an event
+ */
+export function getPointer (e) {
+  return (e.changedTouches && e.changedTouches[0]) || e
 }

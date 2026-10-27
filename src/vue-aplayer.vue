@@ -25,7 +25,7 @@
           <span class="aplayer-title">{{ currentMusic.title || 'Untitled' }}</span>
           <span class="aplayer-author">{{ currentMusic.artist || 'Unknown' }}</span>
         </div>
-        <slot name="display" :current-music="currentMusic" :play-stat="playStat">
+        <slot name="display" :currentMusic="currentMusic" :playStat="playStat">
           <lyrics :current-music="currentMusic" :play-stat="playStat" v-if="showLrc" />
         </slot>
         <controls
@@ -35,6 +35,8 @@
           :volume="audioVolume"
           :muted="isAudioMuted"
           :theme="currentTheme"
+          :is-mobile="isMobile"
+          :list-shown="showList"
           @toggleshuffle="shouldShuffle = !shouldShuffle"
           @togglelist="showList = !showList"
           @togglemute="toggleMute"
@@ -58,12 +60,14 @@
     />
   </div>
 </template>
-<script type="text/babel">
+<script>
   import Thumbnail from './components/aplayer-thumbnail.vue'
   import MusicList from './components/aplayer-list.vue'
   import Controls from './components/aplayer-controller.vue'
   import Lyrics from './components/aplayer-lrc.vue'
+  import { toRaw } from 'vue'
   import { warn } from './utils'
+  import { getHls, getColorThief } from './config'
 
   /**
    * memorize self-adapting theme for cover image urls
@@ -74,6 +78,39 @@
   // mutex playing instance
   let activeMutex = null
 
+
+  const HLS_RE = /\.m3u8(?=(#|\?|$))/
+
+  const MEDIA_EVENTS = [
+    'abort',
+    'canplay', 'canplaythrough',
+    'durationchange',
+    'emptied', 'encrypted', 'ended', 'error',
+    'interruptbegin', 'interruptend',
+    'loadeddata', 'loadedmetadata', 'loadstart',
+    'mozaudioavailable',
+    'pause', 'play', 'playing', 'progress',
+    'ratechange',
+    'seeked', 'seeking', 'stalled', 'suspend',
+    'timeupdate',
+    'volumechange',
+    'waiting',
+  ]
+
+  /**
+   * Extract the dominant color of a loaded <img> with color-thief (v2 or v3)
+   * @return {String|null} css color
+   */
+  function getDominantColor (ColorThief, img) {
+    if (typeof ColorThief.getColorSync === 'function') {
+      // colorthief@3 exports functions
+      const color = ColorThief.getColorSync(img)
+      return color ? color.css() : null
+    }
+    // colorthief@2 exports a class
+    const rgb = new ColorThief().getColor(img)
+    return rgb ? `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})` : null
+  }
 
   const REPEAT = {
     NONE: 'none',
@@ -86,7 +123,6 @@
 
   const VueAPlayer = {
     name: 'APlayer',
-    disableVersionBadge: false,
     components: {
       Thumbnail,
       Controls,
@@ -159,7 +195,7 @@
       /**
        * @since 1.4.0
        * whether to show native audio controls below Vue-APlayer
-       * only work in development environment and not mini mode
+       * not work in mini mode
        *
        * observable
        */
@@ -216,13 +252,17 @@
         default: REPEAT.NO_REPEAT,
       },
     },
+    emits: [
+      'update:music', 'update:muted', 'update:volume', 'update:shuffle', 'update:repeat',
+      ...MEDIA_EVENTS,
+    ],
     data () {
       return {
         internalMusic: this.music,
         isPlaying: false,
         isSeeking: false,
         wasPlayingBeforeSeeking: false,
-        isMobile: /mobile/i.test(window.navigator.userAgent),
+        isMobile: typeof navigator !== 'undefined' && /mobile/i.test(navigator.userAgent),
         playStat: {
           duration: 0,
           loadedTime: 0,
@@ -299,9 +339,7 @@
         return this.list
       },
       shouldShowNativeControls () {
-        return process.env.NODE_ENV !== 'production' &&
-          this.controls &&
-          !this.mini
+        return this.controls && !this.mini
       },
 
       // useful
@@ -313,32 +351,13 @@
           webkitTransform: `translate(${this.floatOffsetLeft}px, ${this.floatOffsetTop}px)`,
         }
       },
-      currentPicStyleObj () {
-        if (this.currentMusic && this.currentMusic.pic) {
-          return {
-            backgroundImage: `url(${this.currentMusic.pic})`,
-          }
-        }
-        return {}
-      },
-      loadProgress () {
-        if (this.playStat.duration === 0) return 0
-        return this.playStat.loadedTime / this.playStat.duration
-      },
-      playProgress () {
-        if (this.playStat.duration === 0) return 0
-        return this.playStat.playedTime / this.playStat.duration
-      },
       playIndex: {
         get () {
-          return this.shuffledList.indexOf(this.currentMusic)
+          return this.shuffledList.indexOf(toRaw(this.currentMusic))
         },
         set (val) {
           this.currentMusic = this.shuffledList[val % this.shuffledList.length]
         },
-      },
-      shouldRepeat () {
-        return this.repeatMode !== REPEAT.NO_REPEAT
       },
 
       // since 1.4.0
@@ -491,7 +510,7 @@
           this.audio.currentTime = this.audio.duration * val
         }
       },
-      onProgressDragEnd (val) {
+      onProgressDragEnd () {
         this.isSeeking = false
 
         if (this.wasPlayingBeforeSeeking) {
@@ -520,17 +539,19 @@
         if (!this.list.length) {
           return [this.internalMusic]
         }
-        let unshuffled = [...this.list]
+        // compare raw objects: the list may or may not be reactive
+        const current = toRaw(this.internalMusic)
+        let unshuffled = this.list.map(toRaw)
         if (!this.internalShuffle || unshuffled.length <= 1) {
           return unshuffled
         }
 
-        let indexOfCurrentMusic = unshuffled.indexOf(this.internalMusic)
+        let indexOfCurrentMusic = unshuffled.indexOf(current)
         if (unshuffled.length === 2 && indexOfCurrentMusic !== -1) {
           if (indexOfCurrentMusic === 0) {
             return unshuffled
           } else {
-            return [this.internalMusic, unshuffled[0]]
+            return [current, unshuffled[0]]
           }
         }
         // shuffle list
@@ -544,7 +565,7 @@
 
         // take currentMusic to first
         if (indexOfCurrentMusic !== -1) {
-          indexOfCurrentMusic = unshuffled.indexOf(this.internalMusic)
+          indexOfCurrentMusic = unshuffled.indexOf(current)
           if (indexOfCurrentMusic !== 0) {
             [unshuffled[0], unshuffled[indexOfCurrentMusic]] = [unshuffled[indexOfCurrentMusic], unshuffled[0]]
           }
@@ -554,7 +575,7 @@
       },
 
       onSelectSong (song) {
-        if (this.currentMusic === song) {
+        if (toRaw(this.currentMusic) === toRaw(song)) {
           this.toggle()
         } else {
           this.currentMusic = song
@@ -578,8 +599,10 @@
         this.isLoading = false
       },
       onAudioDurationChange () {
-        if (this.audio.duration !== 1) {
-          this.playStat.duration = this.audio.duration
+        const duration = this.audio.duration
+        if (duration !== 1) {
+          // NaN while no media is loaded, Infinity for live streams
+          this.playStat.duration = isFinite(duration) ? duration : 0
         }
       },
       onAudioProgress () {
@@ -628,29 +651,14 @@
 
         this.audio.controls = this.shouldShowNativeControls
         this.audio.muted = this.muted
-        this.audio.preload = this.preload
+        if (this.preload) this.audio.preload = this.preload
         this.audio.volume = this.volume
 
 
         // since 1.4.0 Emit as many native audio events
         // @see https://developer.mozilla.org/en-US/docs/Web/Guide/Events/Media_events
 
-        const mediaEvents = [
-          'abort',
-          'canplay', 'canplaythrough',
-          'durationchange',
-          'emptied', 'encrypted', 'ended', 'error',
-          'interruptbegin', 'interruptend',
-          'loadeddata', 'loadedmetadata', 'loadstart',
-          'mozaudioavailable',
-          'pause', 'play', 'playing', 'progress',
-          'ratechange',
-          'seeked', 'seeking', 'stalled', 'suspend',
-          'timeupdate',
-          'volumechange',
-          'waiting',
-        ]
-        mediaEvents.forEach(event => {
+        MEDIA_EVENTS.forEach(event => {
           this.audio.addEventListener(event, e => this.$emit(event, e))
         })
 
@@ -673,30 +681,72 @@
 
 
         if (this.currentMusic) {
-          this.audio.src = this.currentMusic.src
+          this.loadSource(this.currentMusic.src)
+        }
+      },
+
+      loadSource (src) {
+        if (HLS_RE.test(src) && !this.audio.canPlayType('application/x-mpegURL') && !this.audio.canPlayType('application/vnd.apple.mpegURL')) {
+          const Hls = getHls()
+          if (Hls && Hls.isSupported()) {
+            if (!this.hls) {
+              this.hls = new Hls()
+              this.hls.attachMedia(this.audio)
+            }
+            this.hls.loadSource(src)
+            return
+          }
+          warn(Hls ? 'HLS is not supported on your browser' : 'hls.js is required to support m3u8, see https://github.com/fdddf/vue3-aplayer#hls-support')
+        }
+        this.destroyHls()
+        this.audio.src = src
+      },
+
+      destroyHls () {
+        if (this.hls) {
+          this.hls.destroy()
+          this.hls = null
         }
       },
 
       setSelfAdaptingTheme () {
         // auto theme according to current music cover image
-        if ((this.currentMusic.theme || this.theme) === 'pic') {
-          const pic = this.currentMusic.pic
-          // use cache
-          if (picThemeCache[pic]) {
-            this.selfAdaptingTheme = picThemeCache[pic]
-          } else {
-            try {
-              new ColorThief().getColorAsync(pic, ([r, g, b]) => {
-                picThemeCache[pic] = `rgb(${r}, ${g}, ${b})`
-                this.selfAdaptingTheme = `rgb(${r}, ${g}, ${b})`
-              })
-            } catch (e) {
-              warn('color-thief is required to support self-adapting theme')
-            }
-          }
-        } else {
+        if ((this.currentMusic.theme || this.theme) !== 'pic') {
           this.selfAdaptingTheme = null
+          return
         }
+        const pic = this.currentMusic.pic
+        if (!pic) {
+          this.selfAdaptingTheme = null
+          return
+        }
+        // use cache
+        if (picThemeCache[pic]) {
+          this.selfAdaptingTheme = picThemeCache[pic]
+          return
+        }
+        const ColorThief = getColorThief()
+        if (!ColorThief) {
+          warn('color-thief is required to support self-adapting theme, see https://github.com/fdddf/vue3-aplayer#self-adapting-theme-color')
+          return
+        }
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.onload = () => {
+          try {
+            const color = getDominantColor(ColorThief, img)
+            if (color) {
+              picThemeCache[pic] = color
+              // the song may have changed while the image was loading
+              if (this.currentMusic.pic === pic) {
+                this.selfAdaptingTheme = color
+              }
+            }
+          } catch (e) {
+            warn(`failed to pick theme color from ${pic}: ${e.message}`)
+          }
+        }
+        img.src = pic
       },
     },
     watch: {
@@ -704,39 +754,24 @@
         this.internalMusic = music
       },
 
-      currentMusic: {
-        handler (music) {
-          // async
-          this.setSelfAdaptingTheme()
+      currentMusic (music) {
+        // without a list, the play order is just the current song
+        if (!this.list.length) {
+          this.shuffledList = this.getShuffledList()
+        }
+        this.setSelfAdaptingTheme()
+        this.loadSource(music.src)
+      },
 
-          const src = music.src
-          // HLS support
-          if (/\.m3u8(?=(#|\?|$))/.test(src)) {
-            if (this.audio.canPlayType('application/x-mpegURL') || this.audio.canPlayType('application/vnd.apple.mpegURL')) {
-              this.audio.src = src
-            } else {
-              try {
-                const Hls = require('hls.js')
-                if (Hls.isSupported()) {
-                  if (!this.hls) {
-                    this.hls = new Hls()
-                  }
-                  this.hls.loadSource(src)
-                  this.hls.attachMedia(this.audio)
-                } else {
-                  warn('HLS is not supported on your browser')
-                  this.audio.src = src
-                }
-              } catch (e) {
-                warn('hls.js is required to support m3u8')
-                this.audio.src = src
-              }
-            }
-          } else {
-            this.audio.src = src
-          }
-          // self-adapting theme color
-        },
+      // keep the play order in sync with the list and the shuffle switch
+      list () {
+        this.shuffledList = this.getShuffledList()
+      },
+      shouldShuffle () {
+        this.shuffledList = this.getShuffledList()
+      },
+      theme () {
+        this.setSelfAdaptingTheme()
       },
 
       // since 1.4.0
@@ -779,15 +814,13 @@
     mounted () {
       this.initAudio()
       this.setSelfAdaptingTheme()
-      if (this.autoplay) this.play()
+      if (this.shouldAutoplay) this.play()
     },
     beforeUnmount () {
       if (activeMutex === this) {
         activeMutex = null
       }
-      if (this.hls) {
-        this.hls.destroy()
-      }
+      this.destroyHls()
     },
   }
 
@@ -796,7 +829,7 @@
 </script>
 
 <style lang="scss">
-  @import "./scss/variables";
+  @use "./scss/variables" as *;
 
   .aplayer {
     font-family: Arial, Helvetica, sans-serif;

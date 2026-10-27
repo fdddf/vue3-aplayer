@@ -4,42 +4,24 @@
       <h1 align="center">Vue-APlayer</h1>
       <p align="center">
         <img :src="`https://img.shields.io/badge/DEMO-v${version}-41b883.svg?style=flat-square`"/>
-        <a href="https://www.npmjs.com/package/vue-aplayer"><img
-          src="https://img.shields.io/npm/v/vue-aplayer.svg?style=flat-square"/></a>
-        <a href="https://www.npmjs.com/package/vue-aplayer"><img
-          src="https://img.shields.io/npm/dt/vue-aplayer.svg?style=flat-square"/></a>
-      </p>
-      <p>
-        <a href="https://github.com/SevenOutman/vue-aplayer/commits/develop">
-          <img src="https://img.shields.io/github/commit-activity/y/SevenOutman/vue-aplayer.svg?style=flat-square">
-        </a>
-        <a href="https://github.com/SevenOutman/vue-aplayer/commits/develop">
-          <img src="https://img.shields.io/github/last-commit/SevenOutman/vue-aplayer/develop.svg?style=flat-square">
-        </a>
-        <a href="https://github.com/SevenOutman/vue-aplayer/blob/master/LICENSE"><img
-          src="https://img.shields.io/npm/l/vue-aplayer.svg?style=flat-square"/></a>
+        <a href="https://www.npmjs.com/package/vue3-aplayer"><img
+          src="https://img.shields.io/npm/v/vue3-aplayer.svg?style=flat-square"/></a>
+        <a href="https://github.com/fdddf/vue3-aplayer/blob/main/LICENSE"><img
+          src="https://img.shields.io/npm/l/vue3-aplayer.svg?style=flat-square"/></a>
       </p>
       <h3>Basic (zero config)</h3>
-      <aplayer
-        :music="{
-          title: 'secret base~君がくれたもの~',
-          artist: 'Silent Siren',
-          src: 'http://pi.fdddf.com:8080/test/out.mp3',
-          pic: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/secretbase.jpg'
-        }"
-      />
+      <aplayer :music="basic" />
 
       <h3>Featured</h3>
       <aplayer
-        autoplay
         theme="pic"
         shuffle
         repeat="list"
         show-lrc
-        :muted="muted"
-        :volume="volume"
-        :music='list3[0]'
-        :list='list3'
+        v-model:muted="muted"
+        v-model:volume="volume"
+        :music="list[0]"
+        :list="list"
       />
       <ul style="text-align: start">
         <li>Playlist</li>
@@ -57,67 +39,82 @@
         </ul>
       </ul>
       <h3>Mini mode / Float mode (try dragging it around)</h3>
-      <aplayer
-        mini
-        float
-        :music="{
-          title: 'トリカゴ',
-          artist: 'XX:me',
-          src: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/darling.mp3',
-          pic: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/darling.jpg',
-        }"
-      />
+      <aplayer mini float :music="mini" />
       <footer align="center">
-        <p>Thank <a href="https://github.com/DIYgod" target="_blank">@DIYgod</a> and <a
-          href="https://github.com/MoePlayer/APlayer" target="_blank">APlayer</a> for hosting demo resources</p>
+        <p>
+          Music by <a href="https://www.soundhelix.com" target="_blank">SoundHelix</a>,
+          covers from <a href="https://picsum.photos" target="_blank">Lorem Picsum</a>,
+          HLS stream from <a href="https://test-streams.mux.dev" target="_blank">Mux</a>.
+          Based on <a href="https://github.com/SevenOutman/vue-aplayer" target="_blank">Vue-APlayer</a>
+          and <a href="https://github.com/MoePlayer/APlayer" target="_blank">APlayer</a>.
+        </p>
       </footer>
     </div>
   </div>
 </template>
 <script>
-  import Aplayer from '../vue-aplayer.vue'
+  import { version } from '../../package.json'
+
+  const song = (n) => `https://www.soundhelix.com/examples/mp3/SoundHelix-Song-${n}.mp3`
+  const cover = (id) => `https://picsum.photos/id/${id}/300/300`
+  const demoLrc = [
+    '[00:00.00]Vue-APlayer demo',
+    '[00:04.00]Lyrics can be an LRC string',
+    '[00:08.00]or a URL to a .lrc file',
+    '[00:12.00][00:24.00]Repeated lines use multiple time tags',
+    '[00:16.00]The current line follows the playback',
+    '[00:20.00]Drag the progress bar to seek',
+    '[00:28.00]Enjoy the music',
+  ].join('\n')
 
   export default {
     name: 'App',
-    components: {
-      Aplayer,
-    },
     data () {
       return {
-        version: VERSION,
-        volume: 1,
+        version,
+        volume: 0.8,
         muted: false,
-        music3: null,
-        list3: [
+        basic: {
+          title: 'SoundHelix Song 1',
+          artist: 'T. Schürger',
+          src: song(1),
+          pic: cover(1025),
+        },
+        list: [
           {
-            title: '前前前世',
-            artist: 'RADWIMPS',
-            src: 'http://pi.fdddf.com:8080/test/out.mp3',
-            pic: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/yourname.jpg',
-            lrc: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/yourname.lrc',
+            title: 'SoundHelix Song 2',
+            artist: 'T. Schürger',
+            src: song(2),
+            pic: cover(1043),
+            lrc: demoLrc,
           },
           {
-            title: '光るなら.m3u8',
-            artist: 'Goose house',
-            src: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/hls/hikarunara.m3u8',
-            pic: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/hikarunara.jpg',
-            lrc: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/hikarunara.lrc',
+            title: 'Big Buck Bunny (HLS)',
+            artist: 'Blender Foundation',
+            src: 'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8',
+            pic: cover(1084),
           },
           {
-            title: '回レ！雪月花',
-            artist: '小倉唯',
-            src: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/snowmoonflowers.mp3',
-            pic: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/snowmoonflowers.jpg',
-            lrc: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/snowmoonflowers.lrc',
+            title: 'SoundHelix Song 3',
+            artist: 'T. Schürger',
+            src: song(3),
+            pic: cover(1015),
+            theme: '#e8565c',
           },
           {
-            title: 'あっちゅ～ま青春!',
-            artist: '七森中☆ごらく部',
-            src: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/yuruyuri.mp3',
-            pic: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/yuruyuri.jpg',
-            lrc: 'https://cn-east-17-aplayer-35525609.oss.dogecdn.com/yuruyuri.lrc',
+            title: 'SoundHelix Song 4',
+            artist: 'T. Schürger',
+            src: song(4),
+            pic: cover(1069),
+            lrc: demoLrc,
           },
         ],
+        mini: {
+          title: 'SoundHelix Song 5',
+          artist: 'T. Schürger',
+          src: song(5),
+          pic: cover(1062),
+        },
       }
     }
   }

@@ -25,15 +25,14 @@
 
 <script>
   import IconButton from './aplayer-iconbutton.vue'
-  import {getElementViewTop} from '../utils'
-
-  const barHeight = 40
+  import { clamp } from '../utils'
 
   export default {
     components: {
       IconButton,
     },
     props: ['volume', 'muted', 'theme'],
+    emits: ['togglemute', 'setvolume'],
     computed: {
       volumeIcon () {
         if (this.muted || this.volume <= 0) return 'volume-off'
@@ -41,32 +40,28 @@
         return 'volume-down'
       },
     },
+    beforeUnmount () {
+      this.removeDocumentListeners()
+    },
     methods: {
       adjustVolume (e) {
-        let percentage = (barHeight - e.clientY + getElementViewTop(this.$refs.bar)) / barHeight
-        percentage = percentage > 0 ? percentage : 0
-        percentage = percentage < 1 ? percentage : 1
-        this.$emit('setvolume', percentage)
+        const rect = this.$refs.bar.getBoundingClientRect()
+        if (!rect.height) return
+        this.$emit('setvolume', clamp((rect.bottom - e.clientY) / rect.height))
       },
-      onBarMouseDown () {
-        document.addEventListener('mousemove', this.onDocumentMouseMove)
+      onBarMouseDown (e) {
+        this.adjustVolume(e)
+        document.addEventListener('mousemove', this.adjustVolume)
         document.addEventListener('mouseup', this.onDocumentMouseUp)
       },
-      onDocumentMouseMove (e) {
-        let percentage = (barHeight - e.clientY + getElementViewTop(this.$refs.bar)) / barHeight
-        percentage = percentage > 0 ? percentage : 0
-        percentage = percentage < 1 ? percentage : 1
-        this.$emit('setvolume', percentage)
-      },
       onDocumentMouseUp (e) {
+        this.removeDocumentListeners()
+        this.adjustVolume(e)
+      },
+      removeDocumentListeners () {
+        document.removeEventListener('mousemove', this.adjustVolume)
         document.removeEventListener('mouseup', this.onDocumentMouseUp)
-        document.removeEventListener('mousemove', this.onDocumentMouseMove)
-
-        let percentage = (barHeight - e.clientY + getElementViewTop(this.$refs.bar)) / barHeight
-        percentage = percentage > 0 ? percentage : 0
-        percentage = percentage < 1 ? percentage : 1
-        this.$emit('setvolume', percentage)
-      }
+      },
     }
   }
 </script>

@@ -1,20 +1,17 @@
 <template>
-  <svg xmlns:xlink="http://www.w3.org/1999/xlink" height="100%" version="1.1" :viewBox="svg.viewBox" width="100%"
+  <svg xmlns="http://www.w3.org/2000/svg" height="100%" version="1.1" :viewBox="svg.viewBox" width="100%"
        :style="style">
-    <use xlink:href="#aplayer-${type}"></use>
     <path class="aplayer-fill" :d="svg.d"></path>
   </svg>
 </template>
 
 <script>
-  const requireAssets = require.context('../assets', false, /\.svg$/)
-  const SVGs = requireAssets.keys().reduce((svgs, path) => {
-    const inlineSvg = requireAssets(path)
-    const [raw, viewBox, d] = inlineSvg.match(/^<svg.+?viewBox="(.+?)".*><path.+?d="(.+?)".*><\/path><\/svg>$/)
-
-    svgs[path.match(/^.*\/(.+?)\.svg$/)[1]] = {
-      viewBox,
-      d
+  const rawSvgs = import.meta.glob('../assets/*.svg', { query: '?raw', import: 'default', eager: true })
+  const SVGs = Object.keys(rawSvgs).reduce((svgs, path) => {
+    const svg = rawSvgs[path]
+    svgs[path.match(/([^/]+)\.svg$/)[1]] = {
+      viewBox: svg.match(/viewBox="([^"]+)"/)[1],
+      d: svg.match(/\sd="([^"]+)"/)[1],
     }
     return svgs
   }, {})
@@ -23,11 +20,8 @@
     props: ['type'],
     computed: {
       svg () {
-        let icon = this.type
-        if (this.type === 'prev' || this.type === 'next') {
-          icon = 'skip'
-        }
-        return SVGs[this.type] || {}
+        const icon = (this.type === 'prev' || this.type === 'next') ? 'skip' : this.type
+        return SVGs[icon] || {}
       },
       style () {
         if (this.type === 'next') {
